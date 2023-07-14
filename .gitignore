@@ -1,0 +1,19 @@
+# .gitignore file
+
+## For Visual Studio Generated projects
+*.sln
+**/*.vcxproj
+**/*.vcxproj.filters
+*.VC.opendb
+*.sdf
+**/*.suo
+**/*.user
+.vs/*
+**/Debug/*
+CMakeFiles/*
+RelWithDebInfo/*
+Release/*
+Win32/*
+x64/*
+build*/*
+backup*/*
