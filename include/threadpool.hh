@@ -4,9 +4,9 @@
 #include<queue>					//
 #include<thread>				//std::thread
 #include<mutex>					//std::mutex
-#include<condition_variable>	//std::condition_variable
+#include<condition_variable>			//std::condition_variable
 #include<future>				//std::future std::packaged_task
-#include<functional>			//std::invoke_result_t bind
+#include<functional>				//std::invoke_result_t bind
 #include<atomic>				//std::atomic
 #include<utility>				//std::forward 
 #include<chrono>				//time
@@ -27,29 +27,29 @@ namespace pool
 	private:
 		enum
 		{
-			RUNNING = 0,				//Õı³£¹¤×÷×´Ì¬
-			SHUTDOWN = 1,				//²»½ÓÊÜĞÂÈÎÎñ£¬´¦ÀíÊ£ÓàÈÎÎñ
-			STOP = 2,					//²»½ÓÊÕĞÂÈÎÎñ£¬²»´¦ÀíÈÎÎñ
-			TIDYING = 3,				//ÈÎÎñÊıÁ¿Îª¿Õ
-			TERMINATED = 4				//»ØÊÕËùÓĞÏß³Ì
+			RUNNING = 0,				//æ­£å¸¸å·¥ä½œçŠ¶æ€
+			SHUTDOWN = 1,				//ä¸æ¥å—æ–°ä»»åŠ¡ï¼Œå¤„ç†å‰©ä½™ä»»åŠ¡
+			STOP = 2,				//ä¸æ¥æ”¶æ–°ä»»åŠ¡ï¼Œä¸å¤„ç†ä»»åŠ¡
+			TIDYING = 3,				//ä»»åŠ¡æ•°é‡ä¸ºç©º
+			TERMINATED = 4				//å›æ”¶æ‰€æœ‰çº¿ç¨‹
 		};
-		std::mutex								m_mtx_task;			//mutex task queue
-		std::mutex								m_mtx_work;			//mutex work list
-		std::mutex								m_mtx_set;			//mutex for set other params
+		std::mutex						m_mtx_task;		//mutex task queue
+		std::mutex						m_mtx_work;		//mutex work list
+		std::mutex						m_mtx_set;		//mutex for set other params
 		std::condition_variable					m_cond_work;		//worker condition
-		std::condition_variable					m_cond_ctl;			//controller condition
+		std::condition_variable					m_cond_ctl;		//controller condition
 	private:
-		std::thread	*							m_ctl_pthread;		//ctl thread
-		std::atomic<int>						m_state;			//state
-		std::atomic<int>						m_reclaimed;		//The thread to be reclaimed
-		std::atomic<bool>						m_terminate;		//terminated
-		std::atomic<bool>						m_resize;			//resize threads num
-		std::atomic<uint32_t>					m_core_threads;		//core threads num£¬Ä¬ÈÏ 1
-		std::atomic<uint32_t>					m_max_threads;		//max threads num£¬Ä¬ÈÏ 1
-		std::atomic<double>						m_time_monitor;		//ctl thread cycle monitoring time (seconds)
+		std::thread	*					m_ctl_pthread;		//ctl thread
+		std::atomic<int>					m_state;		//state
+		std::atomic<int>					m_reclaimed;		//The thread to be reclaimed
+		std::atomic<bool>					m_terminate;		//terminated
+		std::atomic<bool>					m_resize;		//resize threads num
+		std::atomic<uint32_t>					m_core_threads;		//core threads numï¼Œé»˜è®¤ 1
+		std::atomic<uint32_t>					m_max_threads;		//max threads numï¼Œé»˜è®¤ 1
+		std::atomic<double>					m_time_monitor;		//ctl thread cycle monitoring time (seconds)
 	private:
-		std::list<std::thread::id>				m_works;			//thread list
-		std::queue<std::function<void()>>		m_taskq;			//task queue
+		std::list<std::thread::id>				m_works;		//thread list
+		std::queue<std::function<void()>>			m_taskq;		//task queue
 		std::atomic<int64_t>					m_work_max_cost;	//max work cost time(ms)
 	private:
 		threadpool();
@@ -140,28 +140,28 @@ namespace pool
 
 	//============================= template =============================
 
-	//Ìí¼ÓÈÎÎñ Ä£°åº¯Êı
+	//æ·»åŠ ä»»åŠ¡ æ¨¡æ¿å‡½æ•°
 	template<class F, class... Args>
 	auto threadpool::enqueue(F&& f, Args&& ... args) -> std::future<std::invoke_result_t<F, Args...>>
 	{
 		using return_type = std::invoke_result_t<F, Args...>;
 		auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 		std::future<return_type> ret = task->get_future();
-		//²é¿´×´Ì¬¾ö¶¨ÊÇ·ñÌí¼ÓÈÎÎñ
+		//æŸ¥çœ‹çŠ¶æ€å†³å®šæ˜¯å¦æ·»åŠ ä»»åŠ¡
 #ifdef debug
 		if(m_state)
 		std::clog << "threadpool is not running,can not accept task." << std::endl;
 #endif
 		if (m_state)
 			return ret;
-		//½«ÈÎÎñ¼ÓÈëÈÎÎñ¶ÓÁĞ²¢Í¨Öª µÈ´ıÏß³Ì Ö´ĞĞ
+		//å°†ä»»åŠ¡åŠ å…¥ä»»åŠ¡é˜Ÿåˆ—å¹¶é€šçŸ¥ ç­‰å¾…çº¿ç¨‹ æ‰§è¡Œ
 		std::unique_lock<std::mutex>lock_task(m_mtx_task);
 #ifdef debug
 		std::clog << "Add task" << std::endl;
 #endif
 		m_taskq.emplace([task]() {(*task)(); });
 		lock_task.unlock();
-		if (m_works.size())//Èç¹ûÓĞ¹¤×÷Ïß³Ì£¬ÔòÖ±½ÓÍ¨Öª£¬·ñÔò½»¸ø ¿ØÖÆÏß³Ì»½ĞÑ
+		if (m_works.size())//å¦‚æœæœ‰å·¥ä½œçº¿ç¨‹ï¼Œåˆ™ç›´æ¥é€šçŸ¥ï¼Œå¦åˆ™äº¤ç»™ æ§åˆ¶çº¿ç¨‹å”¤é†’
 			m_cond_work.notify_one();
 		m_cond_ctl.notify_one();
 		return ret;
