@@ -11,7 +11,7 @@
 * Implementation file `"threadpool.cpp"`
 
 ## Standard
-请至少在 ISO C++17 以上的标准下编译
+请至少在 ISO C++17 或者之后的标准下编译
 
 ## include
 ```
